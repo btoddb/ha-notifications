@@ -1,0 +1,68 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BToddB Notifications",
+        "description": "Pick the default notify service the send action pushes to.",
+        "data": {
+          "notify_service": "Notify service"
+        },
+        "data_description": {
+          "notify_service": "Pick the notify service to push notifications to by default (e.g. notify.persistent_notification, notify.mobile_app_DEVICE, or a notify group). Individual calls to btoddb_notifications.send may override this with target."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "BToddB Notifications is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "BToddB Notifications",
+        "data": {
+          "notify_service": "Notify service"
+        },
+        "data_description": {
+          "notify_service": "Pick the notify service to push notifications to by default (e.g. notify.persistent_notification, notify.mobile_app_DEVICE, or a notify group). Individual calls to btoddb_notifications.send may override this with target."
+        }
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Send notification",
+      "description": "Push a high-priority notification through the configured (or overridden) notify target.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "The notification body text."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Optional notification title. Omitted from the payload if not given."
+        },
+        "channel": {
+          "name": "Channel",
+          "description": "Android notification channel name. Defaults to \"BToddB Notifications\"."
+        },
+        "tag": {
+          "name": "Tag",
+          "description": "Notification tag for de-duplication/replacement. HA Companion app only."
+        },
+        "actions": {
+          "name": "Actions",
+          "description": "List of actionable-notification buttons, each with action and title. HA Companion app only."
+        },
+        "data": {
+          "name": "Data overrides",
+          "description": "Arbitrary notify \"data\" overrides, merged last."
+        },
+        "target": {
+          "name": "Target",
+          "description": "\"domain.service\" override of the configured default notify target for this call only."
+        }
+      }
+    }
+  }
+}
