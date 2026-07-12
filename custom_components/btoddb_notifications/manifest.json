@@ -1,0 +1,19 @@
+{
+  "domain": "btoddb_notifications",
+  "name": "BToddB Notifications",
+  "codeowners": [
+    "@btoddb"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/btoddb/ha-notifications",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/btoddb/ha-notifications/issues",
+  "loggers": [
+    "custom_components.btoddb_notifications"
+  ],
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "v0.1.0"
+}

@@ -1,0 +1,28 @@
+# artifacts
+__pycache__
+.pytest*
+*.egg-info
+*/build/*
+*/dist/*
+node_modules
+
+# local stuff
+devcontainer-lock.json
+.devcontainer-lock.json
+
+# misc
+.coverage
+.vscode
+coverage.xml
+.ruff_cache
+
+# Home Assistant configuration
+config/*
+!config/configuration.yaml
+
+# Home Assistant config backups (throwaway runtime state: .storage, db, logs, cache)
+config.backup*/
+
+# don't commit extra custom components used for testing
+custom_components/*
+!custom_components/btoddb_notifications

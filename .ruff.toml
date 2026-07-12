@@ -1,0 +1,44 @@
+# The contents of this file is based on https://github.com/home-assistant/core/blob/dev/pyproject.toml
+
+target-version = "py314"
+
+# Vendored third-party integrations (local testing only) — never lint or format
+# these. Add any new vendored component dir here.
+exclude = []
+
+[lint]
+select = [
+    "ALL",
+]
+
+ignore = [
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
+    "D203", # no-blank-line-before-class (incompatible with formatter)
+    "D212", # multi-line-summary-first-line (incompatible with formatter)
+    "COM812", # incompatible with formatter
+    "ISC001", # incompatible with formatter
+]
+
+[lint.flake8-pytest-style]
+fixture-parentheses = false
+
+[lint.pyupgrade]
+keep-runtime-typing = true
+
+[lint.mccabe]
+max-complexity = 25
+
+[lint.per-file-ignores]
+"custom_components/btoddb_notifications/tests/*.py" = [
+    "ANN",     # type annotations not required in tests
+    "C408",    # dict() literal style
+    "D103",    # missing docstrings in test functions
+    "D104",    # missing docstring in public package
+    "FBT002",  # boolean default positional arg
+    "INP001",  # deliberately no __init__.py: keeps pytest from importing the HA-dependent integration package
+    "PLR0913", # too many arguments
+    "PLR2004", # magic values in comparisons
+    "PT018",   # assertion should be broken into parts
+    "S101",    # assert is the normal test pattern
+    "SLF001",  # tests legitimately exercise private members (e.g. sending._NOTIFY_DATA)
+]

@@ -1,0 +1,67 @@
+send:
+  name: Send notification
+  description: >-
+    Push a high-priority notification through the configured (or overridden) notify
+    target. Returns {success} — call with response_variable/return_response to check
+    whether the downstream notify call succeeded.
+  fields:
+    message:
+      name: Message
+      description: The notification body text.
+      required: true
+      example: The garage door has been open for 20 minutes.
+      selector:
+        text:
+    title:
+      name: Title
+      description: Optional notification title. Omitted from the payload if not given.
+      required: false
+      example: Garage door
+      selector:
+        text:
+    channel:
+      name: Channel
+      description: >-
+        Android notification channel name. Defaults to "BToddB Notifications" so an
+        extracted caller can instead pass its own channel (e.g. "BToddB Reminders") to
+        keep its Android channel identity.
+      required: false
+      example: BToddB Reminders
+      selector:
+        text:
+    tag:
+      name: Tag
+      description: >-
+        Notification tag for de-duplication/replacement. Honoured only by the HA
+        Companion mobile app; silently ignored elsewhere.
+      required: false
+      example: garage-door-open
+      selector:
+        text:
+    actions:
+      name: Actions
+      description: >-
+        List of actionable-notification buttons, each with action and title. Honoured
+        only by the HA Companion mobile app; silently ignored elsewhere.
+      required: false
+      example: '[{"action": "CLOSE_GARAGE", "title": "Close"}]'
+      selector:
+        object:
+    data:
+      name: Data overrides
+      description: >-
+        Arbitrary notify "data" overrides, merged last — can override anything,
+        including ttl/priority/importance/channel/tag/actions.
+      required: false
+      example: '{"priority": "normal"}'
+      selector:
+        object:
+    target:
+      name: Target
+      description: >-
+        "domain.service" override of the configured default notify target for this
+        call only (e.g. "notify.mobile_app_pixel").
+      required: false
+      example: notify.mobile_app_pixel
+      selector:
+        text:
