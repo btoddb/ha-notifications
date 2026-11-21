@@ -3,7 +3,8 @@
 A reusable, high-priority notification-sending integration for Home Assistant. One
 config entry holds a default notify target; any other integration or automation calls
 the `btoddb_notifications.send` service to push a notification, with optional
-actionable-notification (tag/actions) passthrough.
+actionable-notification (tag/actions) passthrough. Apps outside Home Assistant (e.g.
+Grafana alerting) can push the same way over HTTP.
 
 Extracted from [ha-reminders](https://github.com/btoddb/ha-reminders)
 (issue [#72](https://github.com/btoddb/ha-reminders/issues/72)), which was sending
@@ -30,6 +31,10 @@ component can reuse it instead of reimplementing high-priority push delivery.
   Returns `{"success": bool}` — call with `response_variable` (or
   `return_response: true`) if you need to know whether the downstream `notify.*` call
   actually succeeded.
+- **`POST /api/btoddb_notifications/notify`** HTTP endpoint — the same send, for apps
+  outside Home Assistant, authenticated with any valid HA access token (e.g. a
+  long-lived access token). See
+  [Send from another app (HTTP)](#send-from-another-app-http).
 - **High-priority delivery** — every send goes out with `ttl: 0`, `priority: "high"`,
   `importance: "high"` so Android delivers it immediately instead of holding it in
   Doze. Per-call `data` can override any of these.
@@ -102,6 +107,63 @@ automation:
               message: Front door alert failed to send to the mobile app.
 ```
 
+## Send from another app (HTTP)
+
+Any app that can make an HTTP request can push a notification with
+`POST /api/btoddb_notifications/notify`. It goes through exactly the same path as
+`btoddb_notifications.send` (same default target, high-priority payload, channel).
+
+**Token:** any valid Home Assistant access token works (e.g. a long-lived access
+token). Create a dedicated **non-admin** Home Assistant user for the app (Settings →
+People → Users → Add user, leave "Administrator" off), log in as that user, open its
+profile → **Security** → **Long-lived access tokens** → **Create token**. Any user's
+token works; a non-admin one limits what a leaked token can do.
+
+**Body:** a JSON object. `message` is required; `title`, `channel`, `tag`, `actions`,
+`data` and `target` work like the `send` fields above. **Any other key is ignored.**
+`title`, `channel`, `tag` and `target` can also go in the query string as defaults — a
+body value for the same key wins. `target` must be a `notify.<service>`; the endpoint
+never calls anything else.
+
+**Responses:**
+
+| Status | Body | Meaning |
+|---|---|---|
+| 200 | `{"success": true}` | Sent. |
+| 400 | `{"success": false, "error": "<reason>"}` | Bad request (not a JSON object, no `message`, wrong type, non-notify `target`). Nothing sent. |
+| 400 | `{"success": false, "error": "unknown notify service"}` | `target` is a `notify.<service>` that doesn't exist in Home Assistant. Nothing sent. |
+| 502 | `{"success": false}` | The downstream `notify.*` call failed (logged in HA). |
+| 503 | `{"success": false, "error": "integration not loaded"}` | The integration's config entry isn't loaded. |
+| 401 | — | Missing or bad token (Home Assistant's own auth). |
+
+`curl` example:
+
+```bash
+curl -X POST "https://<ha-host>/api/btoddb_notifications/notify" \
+  -H "Authorization: Bearer <long-lived-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Backup", "message": "Nightly backup finished.", "target": "notify.mobile_app_pixel"}'
+```
+
+### Grafana alerting (webhook contact point)
+
+Grafana's webhook contact point sends a fixed JSON body with top-level `title` and
+`message` (plus many other keys, which are ignored), so no template work is needed:
+
+1. Grafana → **Alerting** → **Contact points** → **Add contact point**, integration
+   **Webhook**.
+2. **URL:** `https://<ha-host>/api/btoddb_notifications/notify?channel=Fantasy%20alerts`
+   (the query string sets the Android channel; add `&target=notify.<service>` to send
+   somewhere other than the configured default).
+3. **HTTP Method:** `POST`.
+4. **Optional Webhook settings** → **Authorization Header - Scheme:** `Bearer`;
+   **Authorization Header - Credentials:** the dedicated non-admin user's long-lived
+   token.
+5. If your Grafana version shows **Title**/**Message** fields under Optional Webhook
+   settings, whatever they render becomes the notification's title and body;
+   otherwise Grafana's default title and message are used.
+6. **Test**, then **Save contact point**.
+
 ## How it behaves (spec)
 
 The full, ID'd behavior spec lives in
@@ -112,6 +174,6 @@ The full, ID'd behavior spec lives in
 
 - **Durable (ack/snooze-required) notifications** — an opt-in mode where a
   notification is considered undelivered until the recipient acknowledges or snoozes
-  it, with sender feedback on outcome. **Not implemented yet** — today `send` is
-  fire-and-forget: it reports whether the downstream `notify.*` call succeeded, not
-  whether a human ever saw or acted on the notification.
+  it, with sender feedback on outcome. **Not implemented yet** — today `send` (and the
+  HTTP endpoint) is fire-and-forget: it reports whether the downstream `notify.*` call
+  succeeded, not whether a human ever saw or acted on the notification.

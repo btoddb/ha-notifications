@@ -15,8 +15,9 @@ disagree, that's a bug in one of them — say so rather than guessing.
 Spec files:
 
 - [`spec/notifications.md`](spec/notifications.md) — the config entry (default notify
-  target), the `btoddb_notifications.send` service contract, and the notify payload
-  shape (high-priority delivery, channel, tag/actions passthrough).
+  target), the `btoddb_notifications.send` service contract, the notify payload
+  shape (high-priority delivery, channel, tag/actions passthrough), and the
+  `POST /api/btoddb_notifications/notify` HTTP endpoint.
 
 ## How to write requirements (for humans)
 
@@ -36,3 +37,4 @@ Spec files:
 ## Conventions that apply everywhere
 
 - `sending.py` is a **pure function** module with no HA imports, so its rules are unit-tested in plain Python. Behavior rules in `spec/notifications.md` should map directly onto it.
+- `http_request.py` is the same for the HTTP endpoint (NT-7, NT-8): request parsing, validation and status mapping, with no HA imports.

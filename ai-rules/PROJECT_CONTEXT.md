@@ -10,6 +10,9 @@ This repo is a single Home Assistant **custom integration**,
 holding a default notify target and exposes a `btoddb_notifications.send`
 service any other integration or automation can call to push a high-priority
 notification, with optional actionable-notification (tag/actions) passthrough.
+Other apps (e.g. Grafana alerting) push the same way over HTTP via
+`POST /api/btoddb_notifications/notify`, authenticated with any valid HA
+access token (e.g. a long-lived access token).
 It was extracted from `btoddb_ha_reminders`
 ([ha-reminders](https://github.com/btoddb/ha-reminders) issue #72), which is
 adopting it as a dependency rather than owning notification delivery itself.
