@@ -1,8 +1,9 @@
 # Notifications — component spec
 
 This is the spec for `btoddb_notifications`: the single config entry that owns a
-default notify target, and the `btoddb_notifications.send` service any other
-integration or automation calls to push a notification.
+default notify target, the `btoddb_notifications.send` service any other
+integration or automation calls to push a notification, and the HTTP endpoint other
+apps (e.g. Grafana alerting) call to do the same.
 
 Rule IDs are **stable** — add new IDs, never renumber or reuse. The `NT-*` numbering
 is scoped to this repo (extracted from `ha-reminders`'s `RM-*` numbering, but starts
@@ -58,4 +59,42 @@ call are caught and logged, never propagated — a single failed push must not a
 the caller's automation. Callers that need to know whether the push actually went out
 (e.g. to retry or keep a reminder pending) must call with
 `return_response: true`/`response_variable` and check `success`; a failed push must
-remain observable rather than silently swallowed.
+remain observable rather than silently swallowed. The HTTP endpoint (NT-7) shares this
+delivery path — same target resolution, payload and exception handling — and reports a
+failed push as HTTP 502 (NT-8).
+
+## Send from another app (HTTP)
+
+**NT-7.** `POST /api/btoddb_notifications/notify` lets any app push a notification
+through the same delivery path as `send` (NT-1..NT-6).
+
+- **Auth:** `Authorization: Bearer <token>` with any valid Home Assistant access token
+  (e.g. a long-lived access token) of any user; the user does not need to be an admin.
+- **Body:** must be a JSON object. Recognised keys: `message` (required, non-blank
+  string), `title`, `channel`, `tag`, `target` (strings), `actions` (list of
+  `{action, title}` objects, both strings, no other keys) and `data` (object). They
+  mean the same as in `send` (NT-2). **Every other key is ignored**, so a sender with a
+  fixed body (e.g. a Grafana webhook contact point, which sends top-level `title` and
+  `message` plus many other keys) works as-is. A JSON `null` value counts as absent.
+- **Query string:** `title`, `channel`, `tag` and `target` may be given as query
+  parameters; they are defaults, and a body value for the same key overrides them.
+  `message`, `actions` and `data` are body-only. Other query parameters are ignored.
+- **Entry unloaded:** the view is registered once per Home Assistant run (views can't
+  be unregistered). While the config entry is not loaded (unloaded, disabled, or
+  mid-reload) it answers `503` with `{"success": false, "error": "integration not
+  loaded"}` and sends nothing.
+
+**NT-8 (constraint).** The HTTP `target` (body or query) must be `notify.<service>`,
+where `<service>` is a lowercase slug (`[a-z0-9_]+`); anything else — another domain,
+a bare `notify`, an empty string — is rejected with 400. The endpoint must never let a
+caller invoke a non-notify service. Status codes:
+
+- `200` `{"success": true}` — the downstream `notify.*` call succeeded.
+- `400` `{"success": false, "error": "<short reason>"}` — body not a JSON object
+  (including invalid JSON), `message` missing/blank/not a string, a field of the wrong
+  type, malformed `actions`, a non-notify `target`, or an explicit well-formed
+  `notify.<service>` target that isn't registered in Home Assistant (`"unknown notify
+  service"`). Nothing is sent. (The `send` service does no such check; NT-2.)
+- `502` `{"success": false}` — the downstream `notify.*` call raised; it is logged
+  (NT-6).
+- `503` — the config entry is not loaded (NT-7).

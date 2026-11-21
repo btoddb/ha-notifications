@@ -1,9 +1,11 @@
 """
-Import shim so the pure modules load without Home Assistant.
+Import shim so the pure modules load standalone, bypassing the package ``__init__``.
 
-``sending`` imports nothing from Home Assistant and nothing from the package
-``__init__`` (which does). Loading it by file path bypasses the package import, so
-these tests run under plain pytest with no HA installed.
+``sending`` and ``http_request`` import nothing from Home Assistant and nothing from
+the package ``__init__`` (which does). ``load_module`` loads them by file path, so
+their tests exercise them in isolation. Home Assistant must still be installed
+(``requirements.txt``): pytest's importlib mode imports the parent package for this
+conftest, and ``test_init.py`` imports the integration package on purpose.
 """
 
 from __future__ import annotations
@@ -17,6 +19,9 @@ from pathlib import Path
 # we're cd'd into the tests dir. Insert it explicitly so pytest can be run
 # from the repo root.
 sys.path.insert(0, str(Path(__file__).parent))
+# Repo root, so ``custom_components.btoddb_notifications`` imports explicitly (as
+# test_init.py does) without relying on pytest's rootdir handling.
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
